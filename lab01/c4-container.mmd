@@ -1,0 +1,29 @@
+flowchart TB
+    analyst["Analyst<br/>[Person]<br/>head office"]:::person
+    manager["Branch manager<br/>[Person]<br/>PNH, REP, BTB"]:::person
+    pos["Branch POS systems<br/>[External system, x3]"]:::external
+    mail["E-mail service<br/>[External system]"]:::external
+
+    subgraph boundary["Monthly Sales Report System"]
+        landing["Landing Zone<br/>[Container: File system]<br/>Stores raw branch CSV exports"]:::container
+        ingest["Ingest Job<br/>[Container: Java 25 CLI]<br/>Validates daily sales CSV files"]:::container
+        batch["Report Batch<br/>[Container: Java 25 CLI]<br/>Aggregates sales & renders reports"]:::container
+        store["Report Store<br/>[Container: File system]<br/>Stores generated reports in TXT, HTML, CSV"]:::container
+        desktop["Desktop Viewer<br/>[Container: JavaFX]<br/>Views and exports reports locally"]:::container
+        web["Web Report App<br/>[Container: Web app / HTTPS]<br/>Displays branch report for managers"]:::container
+    end
+
+    pos -- "uploads daily CSVs [SFTP]" --> landing
+    ingest -- "reads & validates [file system]" --> landing
+    batch -- "reads monthly data [file system]" --> landing
+    batch -- "writes reports [file system]" --> store
+    batch -- "sends report notifications [SMTP]" --> mail
+    analyst -- "views & exports reports [in-process / file system]" --> desktop
+    desktop -- "reads reports [file system]" --> store
+    manager -- "views branch report [HTTPS]" --> web
+    web -- "reads reports [file system]" --> store
+
+    classDef person fill:#08427b,color:#ffffff,stroke:#052e56
+    classDef container fill:#1168bd,color:#ffffff,stroke:#0b4884
+    classDef external fill:#8a8a8a,color:#ffffff,stroke:#6b6b6b
+    style boundary stroke-dasharray: 5 5,stroke:#0b4884,fill:transparent
